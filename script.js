@@ -61,8 +61,6 @@ var sequencer = {
             return false;
         }
 
-        this.eighthNoteTime = (60 / this.bpm) / 2;
-
         return true;
     },
 
@@ -95,41 +93,26 @@ var sequencer = {
         var source = this.context.createBufferSource();
         source.buffer = buffer;
         source.connect(this.context.destination);
-        if (!source.start)
+
+        if (!source.start) {
             source.start = source.noteOn;
+        }
+
         source.start(time);
     },
 
-    start: function () {
+    start: function (playlist) {
+        this.barTime = (60 / this.bpm) * 4;
+        this.eighthNoteTime = this.barTime / 8;
+        this.sixteenNoteTime = this.barTime / 16;
         this.startTime = this.context.currentTime + 0.100;
 
-        for (var i = 0; i < 24; i++) {
-            this.playSound(this.BUFFERS.kick, this.startTime + i * 8 * this.eighthNoteTime);
-        }
-
-        for (i = 4; i < 32; i += 4) {
-            this.playSound(this.BUFFERS.bass, this.startTime + i * 8 * this.eighthNoteTime);
-        }
-
-        for (i = 8; i < 32; i += 4) {
-            this.playSound(this.BUFFERS.melody, this.startTime + i * 8 * this.eighthNoteTime);
-        }
-
-        for (i = 12; i < 32; i += 4) {
-            this.playSound(this.BUFFERS.guitar, this.startTime + i * 8 * this.eighthNoteTime);
-        }
-
-        for (i = 16; i < 32; i += 4) {
-            this.playSound(this.BUFFERS.guitar2, this.startTime + i * 8 * this.eighthNoteTime);
-        }
-
-        for (i = 16; i < 32; i += 4) {
-            this.playSound(this.BUFFERS.ts404, this.startTime + i * 8 * this.eighthNoteTime);
-        }
-
-        for (i = 0; i < 33; i += 8) {
-            this.playSound(this.BUFFERS.crash, this.startTime + i * 8 * this.eighthNoteTime);
-        }
+        playlist.forEach((function (a) {
+            this.playSound(
+                this.BUFFERS[a[0]],
+                this.startTime + a[1] * this.barTime + a[2] * this.sixteenNoteTime
+            );
+        }).bind(this));
     }
 };
 
@@ -145,14 +128,18 @@ $(function () {
     };
 
     var playlist = [
-        ["kick", 0]
+        ["kick", 0, 0],
+        ["kick", 2, 0],
+        ["bass", 0, 0],
+        ["crash", 1, 12],
+        ["ts404", 4, 0]
     ];
 
     if (sequencer.init()) {
         sequencer.loadBuffers(BUFFERS_TO_LOAD);
 
         $("#start").on("click", function () {
-            sequencer.start();
+            sequencer.start(playlist);
         })
     }
 });
